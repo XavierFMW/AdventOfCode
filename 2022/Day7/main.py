@@ -3,14 +3,12 @@ from bisect import bisect
 
 
 INPUT = "input.txt"
-DIR_PREFIX = "directory_"
 
 
 ### Build File System ###
 
 file_system = {}
-name_counter = Counter()
-file_total = 0
+directories = set()
 
 
 def build_file_system(path_in):
@@ -30,42 +28,48 @@ def build_file_system(path_in):
 def format_commands(lines):
     output = []
     for line in lines:
-        if " ls" not in line and ".." not in line:
+        if " ls" not in line:
             stripped = line.replace("$ ", "").replace("dir", "").strip()
             output.append(stripped)
     return output
 
 
 def file_system_builder():
-    current_file = None
+    current_path = deque()
+    current_directory = []
     while True:
         command = yield
         first, second = parse_command(command)
 
-        if first == "cd":
-            name = f"{DIR_PREFIX}{second}"
-            key = name + str(get_count(name))
+        if second == "..":
+            current_path.pop()
+
+        elif first == "cd":
+            file = second
+            current_path.append(file)
+            key = tuple(current_path)
             file_system.setdefault(key, [])
-            current_file = key
+            directories.add(key)
 
         elif first.isnumeric():
-            global file_total
-            file_total += int(first)
-            key = second + str(get_count(second))
-            file_system[key] = int(first)
-            file_system[current_file].append(key)
+            size, file = first, second
+            current_directory.append(file)
+            key = (*current_path, file)
+            file_system[key] = int(size)
 
         else:
-            name = f"{DIR_PREFIX}{first}"
-            key = name + str(name_counter[name])
-            file_system[current_file].append(key)
+            file = first
+            current_directory.append(file)
+
+        path_key = tuple(current_path)
+        current_directory = file_system[path_key]
 
 
 def flatten_directories():
 
-    for k in file_system.keys():
-        if k.startswith(DIR_PREFIX):
-            flatten_directory(k)
+    by_depth = sorted(file_system.keys(), key=len)
+    for file in by_depth[::-1]:
+        file_system[file] = get_size(file)
 
 
 def parse_command(command):
@@ -76,54 +80,45 @@ def parse_command(command):
     return first, second
 
 
-def get_count(name):
-    count = name_counter[name]
-    name_counter[name] += 1
-    return count
+def get_size(file):
+    mapped = file_system[file]
 
-
-def flatten_directory(directory):
-    children = deque(file_system[directory][:])
-    total = 0
-
-    while children:
-        child = children.popleft()
-        mapped = file_system[child]
-
-        if isinstance(mapped, int):
-            total += mapped
-        else:
-            children.extend(mapped)
-
-    file_system[directory] = total
+    if isinstance(mapped, int):
+        return mapped
+    else:
+        total = 0
+        for item in mapped:
+            key = (*file, item)
+            total += get_size(key)
+        return total
 
 
 ### Operations on File System ###
 
-def view_file_system(all_files=True):
+def view_file_system(only_directories=False, spacing=20):
+
     for file, size in file_system.items():
-        if all_files or file.startswith(DIR_PREFIX):
+        if not only_directories or file in directories:
+            printable = "/".join(file)
+            spaced = "{0:" + str(spacing) + "} {1}"
             print(
-                "{0:20} {1}".format(file, size)
+                spaced.format(printable, size)
             )
 
 
 def get_sizes_up_to_threshold(threshold):  # Part 1
     total = 0
     for key, size in file_system.items():
-        if key.startswith(DIR_PREFIX) and size <= threshold:
+        if key in directories and size <= threshold:
             total += size
     return total
 
 
 def get_smallest_deletable(disk_space=70000000, needed=30000000):  # Part 2
-    root_key = f"{DIR_PREFIX}/0"
+    root_key = ("/",)
     unused = disk_space - file_system[root_key]
 
-    print(file_total)
-    print(file_system[root_key])
-
-    sizes = sorted(v for k, v in file_system.items() if k.startswith(DIR_PREFIX))
+    sizes = sorted(v for k, v in file_system.items() if k in directories)
     index = bisect(sizes, needed - unused)
 
     return sizes[index]
@@ -131,5 +126,3 @@ def get_smallest_deletable(disk_space=70000000, needed=30000000):  # Part 2
 
 if __name__ == "__main__":
     build_file_system(INPUT)
-    view_file_system()
-    print(get_smallest_deletable())
