@@ -20,59 +20,53 @@ def build_moves(path_in):
     return moves
 
 
-def move_segments(moves, segments=2):
-    tail_occupied = set()
-    rope = tuple([0, 0] for _ in range(segments))
-    head = rope[0]
-
-    for move in moves:
-        key, distance = move
-        dx, dy = MOVES[key]
-
+def play_moves(moves, segments=2):
+    tails = set()
+    rope = [(0, 0) for _ in range(segments)]
+    for key, distance in moves:
         for _ in range(distance):
-            view_board(rope)
-            ohx, ohy = head
-            head[0] += dx
-            head[1] += dy
+            rope[0] = move_head(rope[0], key)
             for index in range(1, segments):
-                leader = rope[index - 1]
                 follower = rope[index]
-                hx, hy = leader
-                tx, ty = follower
-                if abs(hx - tx) > abs(hy - ty) and abs(hx - tx) > 1:
-                    follower[0] = hx
-                    follower[1] = hy + (ty - hy)
-                elif abs(hy - ty) > abs(hx - tx) and abs(hy - ty) > 1:
-                    follower[0] = hx + (tx - hx)
-                    follower[1] = hy
-                elif abs(hx - tx) > 1 or abs(hy - ty) > 1:
-                    follower[0] += dx
-                    follower[1] += dy
-                ohx, ohy = tx, ty
-
-                if index == segments - 1:
-                    tail_occupied.add(tuple(rope[index]))
-
-    return tail_occupied
+                leader = rope[index - 1]
+                rope[index] = move_segment(follower, leader)
+            tails.add(rope[-1])
+    return tails
 
 
-def view_board(rope, width=6, height=5):
-    printed = []
+def move_head(head, key):
+    head_x, head_y = head
+    delta_x, delta_y = MOVES[key]
+    return head_x + delta_x, head_y + delta_y
 
-    print("=" * width)
-    for y in range(height):
-        row = ""
-        for x in range(width):
-            if [x, y] in rope:
-                row += str(rope.index([x, y]))
-            else:
-                row += "."
-        printed.append(row)
-    for r in printed[::-1]:
-        print(r)
-    print("\n")
+
+def move_segment(follower, leader):
+    follower_x, follower_y = follower
+    leader_x, leader_y = leader
+    x_difference = abs(leader_x - follower_x)
+    y_difference = abs(leader_y - follower_y)
+
+    if x_difference > y_difference and x_difference > 1:
+        x = get_new_coordinate(follower_x, leader_x, x_difference)
+        y = leader_y
+    elif y_difference > x_difference  and y_difference > 1:
+        x = leader_x
+        y = get_new_coordinate(follower_y, leader_y, y_difference)
+    else:
+        x = get_new_coordinate(follower_x, leader_x, x_difference)
+        y = get_new_coordinate(follower_y, leader_y, y_difference)
+
+    return x, y
+
+
+def get_new_coordinate(following, leading, difference):
+    new = following
+    if difference > 1:
+        new += 1 if leading > following else -1
+    return new
 
 
 if __name__ == "__main__":
     m = build_moves(INPUT)
-    print(len(move_segments(m, 10)))
+    t_positions = play_moves(m, 10)
+    print(len(t_positions))
