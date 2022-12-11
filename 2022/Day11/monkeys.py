@@ -1,6 +1,6 @@
 from monkey import Monkey
 
-"""
+
 monkey_0 = Monkey(
     (72, 64, 51, 57, 93, 97, 68),
     lambda i: i*19,
@@ -61,38 +61,3 @@ MONKEYS = (
     monkey_6,
     monkey_7,
 )
-"""
-
-monkey_0 = Monkey(
-    (79, 98),
-    lambda i: i*19,
-    lambda i: i % 23 == 0,
-)
-monkey_1 = Monkey(
-    (54, 65, 75, 74),
-    lambda i: i+6,
-    lambda i: i % 19 == 0,
-)
-monkey_2 = Monkey(
-    (79, 60, 97),
-    lambda i: i**2,
-    lambda i: i % 13 == 0,
-)
-monkey_3 = Monkey(
-    (74,),
-    lambda i: i+3,
-    lambda i: i % 17 == 0,
-)
-
-monkey_0.set_partners(monkey_2, monkey_3)
-monkey_1.set_partners(monkey_2, monkey_0)
-monkey_2.set_partners(monkey_1, monkey_3)
-monkey_3.set_partners(monkey_0, monkey_1)
-
-MONKEYS = (
-    monkey_0,
-    monkey_1,
-    monkey_2,
-    monkey_3,
-)
-

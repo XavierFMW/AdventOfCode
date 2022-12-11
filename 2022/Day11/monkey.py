@@ -32,7 +32,7 @@ class Monkey:
             self.falsy.catch(item)
 
     def catch(self, item):
-        self.items.append(item % 30)
+        self.items.append(item % 9699690)  # 9699690 is the product of all divisors in my input
 
     @property
     def inspected(self):

@@ -1,7 +1,7 @@
 from monkeys import MONKEYS
 
 
-ROUNDS = 20
+ROUNDS = 10000
 
 
 if __name__ == "__main__":
